@@ -1,1 +1,7 @@
-alguno habra
+fastapi
+uvicorn
+pandas
+scikit-learn
+joblib
+transformers
+torch
