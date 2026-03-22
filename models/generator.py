@@ -1,24 +1,49 @@
-from transformers import pipeline
+from transformers import pipeline, set_seed
 
 generator = pipeline(
     "text-generation",
-    model="datificate/gpt2-small-spanish"
+    model="mrm8488/spanish-gpt2"
 )
 
-def generate_description(data):
+set_seed(42)
 
-    prompt = f"""
-    Escribe una descripción corta para vender esta vivienda:
 
-    Superficie: {data["area"]} metros cuadrados
-    Habitaciones: {data["bedrooms"]}
-    Baños: {data["bathrooms"]}
-    Plantas: {data["stories"]}
-    Parking: {data["parking"]}
+def generate_description(data: dict, price: int):
 
-    Descripción:
+    base_text = f"""
+    Vivienda de {data['bedrooms']} habitaciones y {data['bathrooms']} baños,
+    con una superficie de {data['area']} m2.
+
+    Cuenta con {data['stories']} plantas y {data['parking']} plazas de aparcamiento.
+
     """
 
-    result = generator(prompt, max_length=120, num_return_sequences=1)
+    extras = []
 
-    return result[0]["generated_text"]
+    if data["airconditioning"]:
+        extras.append("aire acondicionado")
+    if data["basement"]:
+        extras.append("sótano")
+    if data["guestroom"]:
+        extras.append("habitación de invitados")
+    if data["prefarea"]:
+        extras.append("ubicación en zona preferente")
+
+    if extras:
+        base_text += "Incluye " + ", ".join(extras) + ". "
+
+    base_text += f"Precio estimado: {price} euros.\nDescripción:"
+
+    result = generator(
+        base_text,
+        max_length=120,
+        num_return_sequences=1,
+        do_sample=True,
+        temperature=0.7
+    )
+
+    generated = result[0]["generated_text"]
+
+    description = generated.replace(base_text, "").strip()
+
+    return description

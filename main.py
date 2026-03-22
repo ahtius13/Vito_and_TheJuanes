@@ -1,21 +1,18 @@
-from fastapi import FastAPI
-from app.functions import predict_price
-from pydantic import BaseModel
+import sys
+from pathlib import Path
 
-class HouseInput(BaseModel):
-    area: int
-    bedrooms: int
-    bathrooms: int
-    stories: int
-    parking: int
+sys.path.append(str(Path(__file__).parent.resolve()))
+
+from fastapi import FastAPI
+
+from routes.create_house import router as create_house_router
+from routes.get_houses import router as get_houses_router
 
 app = FastAPI()
 
-@app.get("/")
-def home():
-    return {"message": "Housing API running"}
+app.include_router(create_house_router)
+app.include_router(get_houses_router)
 
-@app.post("/predict")
-def predict(house: HouseInput):
-    price = predict_price(house.dict())
-    return {"estimated_price": price}
+@app.get("/")
+def root():
+    return {"message": "API funcionando"}

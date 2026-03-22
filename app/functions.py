@@ -1,17 +1,59 @@
-import joblib
+import json
 import os
-import pandas as pd
 
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+DATA_FILE = os.path.join("data", "houses.json")
 
-MODEL_PATH = os.path.join(BASE_DIR, "models", "price_model.pkl")
-model = joblib.load(MODEL_PATH)
 
-def predict_price(house_data):
+def yes_no_to_binary(value):
     """
-    Recibe un diccionario con los datos de la casa y devuelve el precio estimado
+    Convierte 'yes' a 1 y 'no' a 0.
     """
-    features = ["area", "bedrooms", "bathrooms", "stories", "parking"]
-    df = pd.DataFrame([{k: house_data[k] for k in features}])
-    prediction = model.predict(df)
-    return int(prediction[0])
+    if isinstance(value, str):
+        value = value.lower()
+        if value == "yes":
+            return 1
+        elif value == "no":
+            return 0
+    return value 
+
+
+def preprocess_house_features(data: dict):
+    return [
+        data["area"],
+        data["bedrooms"],
+        data["bathrooms"],
+        data["stories"],
+        data["mainroad"],
+        data["guestroom"],
+        data["basement"],
+        data["hotwaterheating"],
+        data["airconditioning"],
+        data["parking"],
+        data["prefarea"],
+        data["furnishingstatus"]
+    ]
+
+
+def load_houses():
+    """
+    Carga todas las viviendas desde houses.json
+    """
+    if not os.path.exists(DATA_FILE):
+        return []
+    with open(DATA_FILE, "r", encoding="utf-8") as f:
+        try:
+            houses = json.load(f)
+        except json.JSONDecodeError:
+            houses = []
+    return houses
+
+
+def save_house(house):
+    """
+    Guarda una vivienda nueva en houses.json
+    """
+    houses = load_houses()
+    houses.append(house)
+    with open(DATA_FILE, "w", encoding="utf-8") as f:
+        json.dump(houses, f, ensure_ascii=False, indent=4)
+    return house

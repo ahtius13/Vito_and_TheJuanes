@@ -1,24 +1,45 @@
 import pandas as pd
-from sklearn.ensemble import RandomForestRegressor
 import joblib
 import os
 
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 DATA_PATH = os.path.join(BASE_DIR, "data", "housing.csv")
+MODEL_PATH = os.path.join(BASE_DIR, "models", "price_model.pkl")
 
 data = pd.read_csv(DATA_PATH)
 
-features = ["area", "bedrooms", "bathrooms", "stories", "parking"]
-X = data[features]
+# Convertir yes/no a 1/0
+binary_columns = [
+    "mainroad", "guestroom", "basement",
+    "hotwaterheating", "airconditioning", "prefarea"
+]
+
+for col in binary_columns:
+    data[col] = data[col].map({"yes": 1, "no": 0})
+
+# Convertir furnishingstatus
+data["furnishingstatus"] = data["furnishingstatus"].map({
+    "furnished": 2,
+    "semi-furnished": 1,
+    "unfurnished": 0
+})
+
+# Variables
+X = data.drop("price", axis=1)
 y = data["price"]
 
-model = RandomForestRegressor()
+# División
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
-model.fit(X, y)
+# Modelo
+model = LinearRegression()
+model.fit(X_train, y_train)
 
-if not os.path.exists(os.path.join(BASE_DIR, "models")):
-    os.makedirs(os.path.join(BASE_DIR, "models"))
+# Guardar modelo
+joblib.dump(model, MODEL_PATH)
 
-joblib.dump(model, os.path.join(BASE_DIR, "models", "price_model.pkl"))
-
-print("Modelo entrenado y guardado en models/price_model.pkl")
+print("Modelo entrenado y guardado correctamente en:", MODEL_PATH)
