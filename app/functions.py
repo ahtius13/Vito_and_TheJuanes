@@ -1,59 +1,85 @@
-import json
-import os
+import pandas as pd
 
-DATA_FILE = os.path.join("data", "houses.json")
+FEATURE_COLUMNS = [
+    "area",
+    "bedrooms",
+    "bathrooms",
+    "stories",
+    "mainroad",
+    "guestroom",
+    "basement",
+    "hotwaterheating",
+    "airconditioning",
+    "parking",
+    "prefarea",
+    "furnishingstatus"
+]
 
-
-def yes_no_to_binary(value):
+def preprocess_house_features(house):
     """
-    Convierte 'yes' a 1 y 'no' a 0.
+    Convierte los datos del schema en un diccionario ordenado
+    exactamente como espera el modelo de Machine Learning
     """
-    if isinstance(value, str):
-        value = value.lower()
-        if value == "yes":
-            return 1
-        elif value == "no":
-            return 0
-    return value 
+
+    return {
+        "area": house.area,
+        "bedrooms": house.bedrooms,
+        "bathrooms": house.bathrooms,
+        "stories": house.stories,
+        "mainroad": house.mainroad,
+        "guestroom": house.guestroom,
+        "basement": house.basement,
+        "hotwaterheating": house.hotwaterheating,
+        "airconditioning": house.airconditioning,
+        "parking": house.parking,
+        "prefarea": house.prefarea,
+        "furnishingstatus": house.furnishingstatus
+    }
 
 
-def preprocess_house_features(data: dict):
-    return [
-        data["area"],
-        data["bedrooms"],
-        data["bathrooms"],
-        data["stories"],
-        data["mainroad"],
-        data["guestroom"],
-        data["basement"],
-        data["hotwaterheating"],
-        data["airconditioning"],
-        data["parking"],
-        data["prefarea"],
-        data["furnishingstatus"]
+def features_to_dataframe(features_dict):
+    """
+    Convierte el diccionario de features en un DataFrame
+    asegurando el orden correcto de columnas
+    """
+
+    df = pd.DataFrame([features_dict])
+
+    df = df[FEATURE_COLUMNS]
+
+    return df
+
+
+def validate_binary_fields(features_dict):
+    """
+    Valida que los campos binarios solo tengan valores 0 o 1 = 0 no / 1 yes
+    """
+
+    binary_fields = [
+        "mainroad",
+        "guestroom",
+        "basement",
+        "hotwaterheating",
+        "airconditioning",
+        "prefarea"
     ]
 
+    for field in binary_fields:
+        value = features_dict[field]
+        if value not in [0, 1]:
+            raise ValueError(f"El campo '{field}' debe ser 0 o 1")
 
-def load_houses():
-    """
-    Carga todas las viviendas desde houses.json
-    """
-    if not os.path.exists(DATA_FILE):
-        return []
-    with open(DATA_FILE, "r", encoding="utf-8") as f:
-        try:
-            houses = json.load(f)
-        except json.JSONDecodeError:
-            houses = []
-    return houses
+    return True
 
 
-def save_house(house):
+def validate_furnishing_status(value):
     """
-    Guarda una vivienda nueva en houses.json
+    Valida el campo furnishing = 0 Sin Amueblar / 1 Semi Amueblado / 2 Amueblado
     """
-    houses = load_houses()
-    houses.append(house)
-    with open(DATA_FILE, "w", encoding="utf-8") as f:
-        json.dump(houses, f, ensure_ascii=False, indent=4)
-    return house
+
+    if value not in [0, 1, 2]:
+        raise ValueError(
+            "furnishingstatus debe ser: 0 (unfurnished), 1 (semi-furnished), 2 (furnished)"
+        )
+
+    return True
