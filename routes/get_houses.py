@@ -1,22 +1,21 @@
-# app/routes/get_houses.py
-
-from fastapi import APIRouter, HTTPException
-import json
+from fastapi import APIRouter
+import pandas as pd
 import os
 
 router = APIRouter()
 
+DATA_PATH = os.path.join("data", "houses.csv")
+
+
 @router.get("/houses")
 def get_houses():
-    data_file = "data/houses.json"
 
-    if not os.path.exists(data_file):
-        return []
+    if not os.path.exists(DATA_PATH):
+        return {"message": "No hay casas registradas"}
 
-    try:
-        with open(data_file, "r", encoding="utf-8") as f:
-            houses = json.load(f)
-    except json.JSONDecodeError:
-        raise HTTPException(status_code=500, detail="Error al leer el archivo de viviendas.")
+    df = pd.read_csv(DATA_PATH)
 
-    return houses
+    if df.empty:
+        return {"message": "No hay casas registradas"}
+
+    return df.to_dict(orient="records")

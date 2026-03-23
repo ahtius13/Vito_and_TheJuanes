@@ -1,48 +1,50 @@
 from fastapi import APIRouter
-import json
+import pandas as pd
 import os
 import joblib
-import numpy as np
 
+from app.schemas import HouseInput
 from app.functions import preprocess_house_features
 from models.generator import generate_description
 
 router = APIRouter()
 
-MODEL_PATH = "models/price_model.pkl"
-DATA_PATH = "data/houses.json"
+MODEL_PATH = os.path.join("models", "price_model.pkl")
+DATA_PATH = os.path.join("data", "houses.csv")
 
 model = joblib.load(MODEL_PATH)
 
 
 @router.post("/houses")
-def create_house(house: dict):
-    try:
-        features = preprocess_house_features(house)
+def create_house(house: HouseInput):
 
-        features_array = np.array(features).reshape(1, -1)
+    # Preprocesar datos
+    features = preprocess_house_features(house)
 
-        predicted_price = int(model.predict(features_array)[0])
+    # Convertir a DataFrame
+    df_features = pd.DataFrame([features])
 
-        description = generate_description(house, predicted_price)
+    # Predecir precio
+    price = int(model.predict(df_features)[0])
 
-        house_data = house.copy()
-        house_data["price"] = predicted_price
-        house_data["description"] = description
+    # Generar descripción
+    description = generate_description(house, price)
 
-        if not os.path.exists(DATA_PATH):
-            with open(DATA_PATH, "w") as f:
-                json.dump([], f)
+    # Crear fila completa
+    new_row = {
+        **features,
+        "price": price,
+        "description": description
+    }
 
-        with open(DATA_PATH, "r") as f:
-            data = json.load(f)
+    df_new = pd.DataFrame([new_row])
 
-        data.append(house_data)
+    if os.path.exists(DATA_PATH):
+        df_existing = pd.read_csv(DATA_PATH)
+        df_all = pd.concat([df_existing, df_new], ignore_index=True)
+    else:
+        df_all = df_new
 
-        with open(DATA_PATH, "w") as f:
-            json.dump(data, f, indent=4)
+    df_all.to_csv(DATA_PATH, index=False)
 
-        return house_data
-
-    except Exception as e:
-        return {"error": str(e)}
+    return new_row
