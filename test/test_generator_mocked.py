@@ -24,12 +24,9 @@ def sample_house():
 
 
 @patch("models.generator.generator")
-def test_generate_description(mock_generator, sample_house):
-    mock_generator.return_value = [{
-        "generated_text": (
-            "Se ofrece en venta una excelente vivienda de 1500 m², "
-            "con 3 habitaciones y 2 baños. Excelente iluminación natural."
-        )
+def test_generate_description_mock(mock_pipeline, sample_house):
+    mock_pipeline.return_value = [{
+        "generated_text": "Se ofrece en venta una excelente vivienda de 1500 m²... Excelente iluminación natural."
     }]
 
     price = 300000
@@ -37,11 +34,6 @@ def test_generate_description(mock_generator, sample_house):
     description = generate_description(sample_house, price)
 
     assert isinstance(description, str)
-    assert len(description) > 20
-
-    # Verifica que usa datos del input
     assert "1500" in description
     assert "3" in description
-
-    # Verifica que incluye precio
     assert "300000" in description

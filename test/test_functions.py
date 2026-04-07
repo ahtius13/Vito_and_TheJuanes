@@ -11,6 +11,7 @@ from app.functions import (
 
 from app.schemas import HouseInput
 
+
 @pytest.fixture
 def sample_house():
     return HouseInput(
@@ -28,13 +29,14 @@ def sample_house():
         furnishingstatus=2
     )
 
+
 def test_preprocess_house_features(sample_house):
     features = preprocess_house_features(sample_house)
 
     assert isinstance(features, dict)
+    assert set(features.keys()) == set(FEATURE_COLUMNS)
     assert features["area"] == 2000
     assert features["bedrooms"] == 3
-    assert len(features) == len(FEATURE_COLUMNS)
 
 
 def test_features_to_dataframe(sample_house):
@@ -48,13 +50,12 @@ def test_features_to_dataframe(sample_house):
 
 def test_validate_binary_fields_valid(sample_house):
     features = preprocess_house_features(sample_house)
-
     assert validate_binary_fields(features) is True
 
 
 def test_validate_binary_fields_invalid(sample_house):
     features = preprocess_house_features(sample_house)
-    features["mainroad"] = 2  
+    features["mainroad"] = 2
 
     with pytest.raises(ValueError):
         validate_binary_fields(features)
@@ -68,7 +69,7 @@ def test_validate_furnishing_status_valid():
 
 def test_validate_furnishing_status_invalid():
     with pytest.raises(ValueError):
-        validate_furnishing_status(5)
+        validate_furnishing_status(99)
 
 
 def test_full_preprocess_pipeline(sample_house):
