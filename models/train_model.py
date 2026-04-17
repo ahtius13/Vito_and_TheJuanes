@@ -15,7 +15,27 @@ def load_data():
     if not os.path.exists(DATA_PATH):
         raise FileNotFoundError(f"No se encontró el dataset en {DATA_PATH}")
 
-    return pd.read_csv(DATA_PATH)
+    # Leer todo como string para poder limpiar
+    df = pd.read_csv(DATA_PATH, dtype=str)
+
+    return df
+
+
+def clean_numeric_columns(df):
+    """
+    Corrige columnas numéricas con comas como decimales
+    """
+    numeric_columns = ["price", "area"]
+
+    for col in numeric_columns:
+        df[col] = (
+            df[col]
+            .str.replace(",", ".", regex=False)  # cambia coma por punto
+            .str.replace('"', '', regex=False)   # elimina comillas si existen
+            .astype(float)                      # convierte a float
+        )
+
+    return df
 
 
 def preprocess_data(df):
@@ -36,7 +56,6 @@ def preprocess_data(df):
     for col in binary_columns:
         df[col] = df[col].map(binary_map)
 
-    # furnishing = numérico
     furnishing_map = {
         "unfurnished": 0,
         "semi-furnished": 1,
@@ -50,6 +69,9 @@ def preprocess_data(df):
 
 def train_model():
     df = load_data()
+
+    df = clean_numeric_columns(df)
+
     df = preprocess_data(df)
 
     # Features y target
@@ -61,7 +83,6 @@ def train_model():
         X, y, test_size=0.2, random_state=42
     )
 
-    # Modelo
     model = LinearRegression()
     model.fit(X_train, y_train)
 
@@ -69,6 +90,7 @@ def train_model():
     joblib.dump(model, MODEL_PATH)
 
     print(f"Modelo entrenado y guardado en: {MODEL_PATH}")
+
 
 if __name__ == "__main__":
     train_model()
