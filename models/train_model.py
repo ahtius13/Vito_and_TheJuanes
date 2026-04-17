@@ -15,7 +15,7 @@ def load_data():
     if not os.path.exists(DATA_PATH):
         raise FileNotFoundError(f"No se encontró el dataset en {DATA_PATH}")
 
-    # Leer TODO como string para poder limpiar
+    # Leer todo como string para poder limpiar
     df = pd.read_csv(DATA_PATH, dtype=str)
 
     return df
@@ -83,7 +83,6 @@ def train_model():
         X, y, test_size=0.2, random_state=42
     )
 
-    # Modelo
     model = LinearRegression()
     model.fit(X_train, y_train)
 
